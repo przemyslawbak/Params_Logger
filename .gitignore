@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Project-specific files
+**/TODO.txt
+**/log.txt
+**/log.config
+
 # User-specific files
 *.rsuser
 *.suo
