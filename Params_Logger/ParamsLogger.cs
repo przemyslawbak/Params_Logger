@@ -174,12 +174,18 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// handling unhandled fatal exceptions
+        /// </summary>
         private void UnhandledExceptionsHandler()
         {
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(OnUnhandledExceptionAsync);
         }
 
+        /// <summary>
+        /// unhandled exception event
+        /// </summary>
         async void OnUnhandledExceptionAsync(object sender, UnhandledExceptionEventArgs args)
         {
             Error(string.Format("Runtime terminating: {0}", args.IsTerminating));
@@ -187,6 +193,11 @@ namespace Params_Logger
             await ProcessLogList();
         }
 
+        /// <summary>
+        /// starts timer when saving logs will be temporary suspended
+        /// when timer is stopped, ProcessLogList is called for processing and saving logs
+        /// after this timer is restarted
+        /// </summary>
         private async Task RunTimerAsync()
         {
             _savingTimer = new Timer();
@@ -201,6 +212,11 @@ namespace Params_Logger
             _savingTimer.Start();
         }
 
+        /// <summary>
+        /// loops back to timer start, disables _savingTimer.Enabled property
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void ResetTimerAsync(object sender, EventArgs e)
         {
             _savingTimer.Enabled = false;
@@ -208,6 +224,11 @@ namespace Params_Logger
             await RunTimerAsync();
         }
 
+        /// <summary>
+        /// created new log list for iteration and clears previous collection
+        /// iterates new collection to process items
+        /// </summary>
+        /// <returns></returns>
         private async Task ProcessLogList()
         {
             List<LogModel> iterateMe = LogList.ToList();
@@ -219,6 +240,12 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// interface implementation
+        /// can be called from property setter
+        /// </summary>
+        /// <param name="value">property value</param>
+        /// <param name="propertyName">property name</param>
         public void Prop(object value, [CallerMemberName] string propertyName = null)
         {
             if (_executeOnDebugSettings) // if on DEBUG
@@ -238,6 +265,11 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// interface implementation
+        /// can be called from methods
+        /// </summary>
+        /// <param name="arguments">array of passed arguments</param>
         public void Called(params object[] arguments)
         {
             if (_executeOnDebugSettings) // if on DEBUG
@@ -255,6 +287,11 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// interface implementation
+        /// can be called from methods
+        /// </summary>
+        /// <param name="arguments">array of passed arguments</param>
         public void Ended(params object[] arguments)
         {
             if (_executeOnDebugSettings) // if on DEBUG
@@ -272,6 +309,11 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// interface implementation
+        /// can be called to pass information about some app event
+        /// </summary>
+        /// <param name="arguments">string info</param>
         public void Info(string value)
         {
             if (_executeOnDebugSettings) // if on DEBUG
@@ -286,6 +328,11 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// interface implementation
+        /// can be called from catch to pass information about exception
+        /// </summary>
+        /// <param name="arguments">string info</param>
         public void Error(string value)
         {
             if (_executeOnDebugSettings) // if on DEBUG
@@ -305,6 +352,11 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// processing log object to get string data
+        /// </summary>
+        /// <param name="log">log object</param>
+        /// <returns></returns>
         private async Task GetStringAttributesAsync(LogModel log)
         {
             string methodName = string.Empty;
@@ -329,6 +381,16 @@ namespace Params_Logger
         //NOTE: not possible to get argument variables with reflection, best way is to use 'nameof': https://stackoverflow.com/a/2566177/11972985
         //NOTE: not possible to get parameter values with reflection: https://stackoverflow.com/a/1867496/11972985
 
+        /// <summary>
+        /// based on passed data builds string log data to be saved in file
+        /// </summary>
+        /// <param name="date">datetime of event</param>
+        /// <param name="type">type of event</param>
+        /// <param name="className">member name</param>
+        /// <param name="methodName">method</param>
+        /// <param name="parameters">passed parameters</param>
+        /// <param name="arguments">passed arguments</param>
+        /// <returns></returns>
         private string BuildLine(DateTime date, string type, string className, string methodName, ParameterInfo[] parameters, object[] arguments)
         {
             bool areParams = parameters.Length > 0;
@@ -392,6 +454,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building arguments of the string
+        /// for other types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildArguments(object[] arguments)
         {
             StringBuilder sb = new StringBuilder();
@@ -410,6 +477,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building parameters of the string
+        /// for other types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildOther(object[] arguments, ParameterInfo[] parameters)
         {
             StringBuilder sb = new StringBuilder();
@@ -428,6 +500,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building parameters of the string
+        /// for info types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildInfoError(object[] arguments)
         {
             StringBuilder sb = new StringBuilder();
@@ -440,6 +517,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building parameter of the string
+        /// for prop types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildProp(object[] arguments)
         {
             StringBuilder sb = new StringBuilder();
@@ -450,6 +532,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building parameters of the string
+        /// for call types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildCalled(ParameterInfo[] parameters, object[] arguments)
         {
             StringBuilder sb = new StringBuilder();
@@ -471,6 +558,11 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// building first part of the string containig time, class name, method name
+        /// for other types of event
+        /// </summary>
+        /// <returns>string data</returns>
         private string BuildBegin(DateTime date, string type, string className, string methodName)
         {
             StringBuilder sb = new StringBuilder();
@@ -487,6 +579,10 @@ namespace Params_Logger
             return sb.ToString();
         }
 
+        /// <summary>
+        /// in case of async method retrieved from the stack, is searching for real name of the method
+        /// </summary>
+        /// <returns>founded method, or null in case if not found</returns>
         private static MethodBase GetRealMethodFromAsyncMethod(MethodBase asyncMethod)
         {
             try
@@ -509,6 +605,9 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// saves async log event line
+        /// </summary>
         private async Task SaveLogAsync(string line) //DO NOT LOG -> makes endless loop!
         {
             try
@@ -525,6 +624,10 @@ namespace Params_Logger
             }
         }
 
+        /// <summary>
+        /// deletes file on aplication start, if deleteLogs = true in log.config
+        /// </summary>
+        /// <returns>string data</returns>
         private void DeleteFile(string path)
         {
             if (File.Exists(path))
