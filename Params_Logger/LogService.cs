@@ -1,4 +1,4 @@
-﻿using Params_Logger.Model;
+﻿using Params_Logger.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
