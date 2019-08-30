@@ -2,7 +2,7 @@
 
 namespace Params_Logger
 {
-    public interface ILogService
+    public interface IParamsLogger
     {
         void Called(params object[] values);
         void Ended(params object[] values);
