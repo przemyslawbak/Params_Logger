@@ -145,7 +145,7 @@ When method catches exception, it gives sample output:
   - logging unhandled fatal exceptions.
   
 2. Library is using:
-  - .Net Framework 4.8,
+  - .Net Standard 2.0,
   - System.Reflection,
   - System.Configuration.ConfigurationManager.
   
