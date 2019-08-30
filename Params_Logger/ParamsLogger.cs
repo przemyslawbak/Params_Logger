@@ -1,13 +1,13 @@
-﻿using Params_Logger.Models;
+﻿using Autofac;
+using Params_Logger.Models;
+using Params_Logger.Services;
+using Params_Logger.Startup;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -15,162 +15,66 @@ namespace Params_Logger
 {
     public class ParamsLogger : IParamsLogger, IAsyncInitialization
     {
+        private readonly IFileService _fileService;
+        private readonly IStringService _stringService;
+        private readonly IConfigService _configService;
         private Timer _savingTimer;
-        AppDomain _currentDomain;
+        private AppDomain _currentDomain;
 
-        //config variables
+        //config fields
         private string _logFile;
         private bool _debugOnly;
         private bool _executeOnDebugSettings;
         private bool _deleteLogs;
 
-        //config defaults
-        private readonly string _logFileDefaults = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "log.txt");
-        private readonly bool _debugOnlyDefaults = true;
-        private readonly bool _deleteLogsDefaults = true;
-
-        public ParamsLogger()
+        public ParamsLogger(IFileService fileService, IStringService stringService, IConfigService configService)
         {
+            _fileService = fileService;
+            _stringService = stringService;
+
             LogList = new List<LogModel>();
 
-            RunConfig();
-
-            if (_executeOnDebugSettings) // if on DEBUG
-            {
-                TimerInitialization = RunTimerAsync();
-
-                UnhandledExceptionsHandler();
-            }
+            Initialization = RunConfigAsync();
         }
 
         public List<LogModel> LogList { get; set; } //list of added logs
-        public Task TimerInitialization { get; private set; } //async init Task
+        public Task Initialization { get; set; } //async init Task
+
+        private ConfigModel _config;
+        public ConfigModel Config
+        {
+            get => _config;
+            set
+            {
+                _config = value;
+                _logFile = _config.LogFile;
+                _debugOnly = _config.DebugOnly;
+                _executeOnDebugSettings = _config.ExecuteOnDebugSettings;
+                _deleteLogs = _config.DeleteLogs;
+            }
+        }
 
         /// <summary>
         /// configuration method, loading variables from log.config
         /// if file not found, setting up defaults
         /// </summary>
-        private void RunConfig()
+        private async Task RunConfigAsync()
         {
+            IContainer container = BootStrapper.BootStrap();
             _currentDomain = AppDomain.CurrentDomain;
-            string path = GetLogConfigPath();
 
-            if (string.IsNullOrEmpty(path))
-            {
-                _logFile = _logFileDefaults;
-                _debugOnly = _debugOnlyDefaults;
-                _deleteLogs = _deleteLogsDefaults;
-            }
-            else
-            {
-                ExeConfigurationFileMap configMap = new ExeConfigurationFileMap();
-                configMap.ExeConfigFilename = path;
-                Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
-
-                _logFile = GetLogPath(config);
-                _debugOnly = GetDebugOnlyPath(config);
-                _deleteLogs = GetDeleteLogs(config);
-            }
-
-            if (!_debugOnly || (_debugOnly && Debugger.IsAttached))
-            {
-                _executeOnDebugSettings = true;
-            }
-            else
-            {
-                _executeOnDebugSettings = false;
-            }
+            ConfigModel config = _configService.GetConfig();
 
             if (_deleteLogs)
             {
-                DeleteFile(_logFile);
-            }
-        }
-
-        /// <summary>
-        /// gets setting for deleteLogs from log.config or returns default
-        /// </summary>
-        /// <param name="config">app config</param>
-        /// <returns>bool value</returns>
-        private bool GetDeleteLogs(Configuration config)
-        {
-            bool result;
-
-            string deleteLogs = config.AppSettings.Settings["deleteLogs"].Value;
-            bool isParsed = bool.TryParse(deleteLogs, out result);
-
-            return isParsed ? Convert.ToBoolean(deleteLogs) : _deleteLogsDefaults;
-        }
-
-        /// <summary>
-        /// gets setting for debugOnly from log.config or returns default
-        /// </summary>
-        /// <param name="config">app config</param>
-        /// <returns>bool value</returns>
-        private bool GetDebugOnlyPath(Configuration config)
-        {
-            bool result;
-
-            string debugOnly = config.AppSettings.Settings["debugOnly"].Value;
-            bool isParsed = bool.TryParse(debugOnly, out result);
-
-            return isParsed ? Convert.ToBoolean(debugOnly) : _debugOnlyDefaults;
-        }
-
-        /// <summary>
-        /// gets setting for logFile from log.config or returns default
-        /// </summary>
-        /// <param name="config">app config</param>
-        /// <returns>string path value</returns>
-        private string GetLogPath(Configuration config)
-        {
-            string logFile = config.AppSettings.Settings["logFile"].Value;
-
-            return (!string.IsNullOrEmpty(logFile)) ? logFile : _logFileDefaults;
-        }
-
-        /// <summary>
-        /// looking for log.config file, in the project folders
-        /// file have to contain phrases: logFile, debugOnly, deleteLogs
-        /// </summary>
-        /// <returns>file path</returns>
-        private string GetLogConfigPath()
-        {
-            bool ok = false;
-
-            string newDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
-            string[] files = Directory.GetFiles(newDirectory, "log.config", SearchOption.AllDirectories);
-
-            foreach (var file in files)
-            {
-                List<string> lines = ReadFileLines(file);
-
-                if (lines.Any(l => l.Contains("logFile")) && lines.Any(l => l.Contains("debugOnly")) && lines.Any(l => l.Contains("deleteLogs")))
-                    ok = true;
-
-                if (ok)
-                {
-                    return file;
-                }
+                _fileService.DeleteFile(_logFile);
             }
 
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// file reader
-        /// </summary>
-        /// <param name="file"></param>
-        /// <returns></returns>
-        private List<string> ReadFileLines(string file)
-        {
-            using (var reader = File.OpenText(file))
+            if (_executeOnDebugSettings) // if on DEBUG
             {
-                var fileText = reader.ReadToEnd();
+                await RunTimerAsync();
 
-                var array = fileText.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-                return new List<string>(array);
+                UnhandledExceptionsHandler();
             }
         }
 
@@ -215,8 +119,6 @@ namespace Params_Logger
         /// <summary>
         /// loops back to timer start, disables _savingTimer.Enabled property
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private async void ResetTimerAsync(object sender, EventArgs e)
         {
             _savingTimer.Enabled = false;
@@ -236,7 +138,9 @@ namespace Params_Logger
 
             foreach (LogModel item in iterateMe)
             {
-                await GetStringAttributesAsync(item);
+                string line = _stringService.GetStringAttributes(item);
+
+                await _fileService.SaveLogAsync(line, _logFile);
             }
         }
 
@@ -254,12 +158,7 @@ namespace Params_Logger
 
                 object[] arguments = { propertyName, value };
 
-                MethodBase callingMethod = new StackTrace().GetFrame(1).GetMethod();
-
-                if (callingMethod != null && (callingMethod.Name == "MoveNext" || callingMethod.Name == "Run"))
-                {
-                    callingMethod = GetRealMethodFromAsyncMethod(callingMethod);
-                }
+                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 LogList.Add(new LogModel { MethodName = nameof(Prop), Arguments = arguments, Date = date, Method = callingMethod });
             }
@@ -276,12 +175,7 @@ namespace Params_Logger
             {
                 DateTime date = DateTime.Now;
 
-                MethodBase callingMethod = new StackTrace().GetFrame(1).GetMethod();
-
-                if (callingMethod != null && (callingMethod.Name == "MoveNext" || callingMethod.Name == "Run"))
-                {
-                    callingMethod = GetRealMethodFromAsyncMethod(callingMethod);
-                }
+                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 LogList.Add(new LogModel { MethodName = nameof(Called), Arguments = arguments, Date = date, Method = callingMethod });
             }
@@ -298,12 +192,7 @@ namespace Params_Logger
             {
                 DateTime date = DateTime.Now;
 
-                MethodBase callingMethod = new StackTrace().GetFrame(1).GetMethod();
-
-                if (callingMethod != null && (callingMethod.Name == "MoveNext" || callingMethod.Name == "Run"))
-                {
-                    callingMethod = GetRealMethodFromAsyncMethod(callingMethod);
-                }
+                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 LogList.Add(new LogModel { MethodName = nameof(Ended), Arguments = arguments, Date = date, Method = callingMethod });
             }
@@ -322,7 +211,7 @@ namespace Params_Logger
 
                 object[] arguments = { value };
 
-                MethodBase callingMethod = new StackTrace().GetFrame(1).GetMethod();
+                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 LogList.Add(new LogModel { MethodName = nameof(Info), Arguments = arguments, Date = date, Method = callingMethod });
             }
@@ -341,246 +230,31 @@ namespace Params_Logger
 
                 object[] arguments = { value };
 
-                MethodBase callingMethod = new StackTrace().GetFrame(1).GetMethod();
-
-                if (callingMethod != null && (callingMethod.Name == "MoveNext" || callingMethod.Name == "Run"))
-                {
-                    callingMethod = GetRealMethodFromAsyncMethod(callingMethod);
-                }
+                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 LogList.Add(new LogModel { MethodName = nameof(Error), Arguments = arguments, Date = date, Method = callingMethod });
             }
         }
 
         /// <summary>
-        /// processing log object to get string data
+        /// gets MethodBase for passed stack frame
         /// </summary>
-        /// <param name="log">log object</param>
+        /// <param name="frame"></param>
         /// <returns></returns>
-        private async Task GetStringAttributesAsync(LogModel log)
+        private MethodBase GetMethod(StackFrame frame)
         {
-            string methodName = string.Empty;
-            string className = string.Empty;
-            ParameterInfo[] parameters = { };
+            MethodBase callingMethod = frame.GetMethod();
 
-            if (log.Method != null && log.Method.ReflectedType != null)
+            if (callingMethod != null && (callingMethod.Name == "MoveNext" || callingMethod.Name == "Run"))
             {
-                methodName = log.Method.Name;
-                className = log.Method.ReflectedType.Name;
-                parameters = log.Method.GetParameters();
+                callingMethod = GetRealMethodFromAsyncMethod(callingMethod);
             }
 
-            log.MethodName = log.MethodName.ToUpper();
-
-            string line = BuildLine(log.Date, log.MethodName, className, methodName, parameters, log.Arguments);
-
-            await SaveLogAsync(line);
-
-        }
-
-        //NOTE: not possible to get argument variables with reflection, best way is to use 'nameof': https://stackoverflow.com/a/2566177/11972985
-        //NOTE: not possible to get parameter values with reflection: https://stackoverflow.com/a/1867496/11972985
-
-        /// <summary>
-        /// based on passed data builds string log data to be saved in file
-        /// </summary>
-        /// <param name="date">datetime of event</param>
-        /// <param name="type">type of event</param>
-        /// <param name="className">member name</param>
-        /// <param name="methodName">method</param>
-        /// <param name="parameters">passed parameters</param>
-        /// <param name="arguments">passed arguments</param>
-        /// <returns></returns>
-        private string BuildLine(DateTime date, string type, string className, string methodName, ParameterInfo[] parameters, object[] arguments)
-        {
-            bool areParams = parameters.Length > 0;
-            bool combineParamsArgs = parameters.Length == arguments.Length;
-            bool areArgs = arguments.Length > 0;
-            bool noArgs = arguments.Length == 0;
-            bool typeProps = type == "PROP";
-            bool typeCalled = type == "CALLED";
-            bool typeInfo = type == "INFO";
-            bool typeError = type == "ERROR";
-            bool typeOther = !combineParamsArgs && !typeProps && !typeCalled && !typeInfo;
-
-            string begin = "";
-            string param = "";
-            string separator = "";
-            string argum = "";
-
-            begin = BuildBegin(date, type, className, methodName);
-
-            if (typeCalled && areParams && combineParamsArgs) //CALLED
-            {
-                param = BuildCalled(parameters, arguments);
-            }
-            else if (typeCalled && !areParams) //CALLED
-            {
-                param = "()";
-            }
-            else if (typeProps) //PROP
-            {
-                param = BuildProp(arguments);
-            }
-            else if (typeInfo || typeError) //INFO & ERROR
-            {
-                param = BuildInfoError(arguments);
-            }
-            else if (areParams && !combineParamsArgs && !typeCalled) //all OTHER
-            {
-                param = BuildOther(arguments, parameters);
-            }
-
-            if (!typeCalled && !typeProps && !typeInfo && !typeError)
-            {
-                separator = "|";
-            }
-
-            if (areArgs && typeOther) //all OTHER
-            {
-                argum = BuildArguments(arguments);
-            }
-            else if (noArgs && typeOther) //none
-            {
-                argum = "none";
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append(begin);
-            sb.Append(param);
-            sb.Append(separator);
-            sb.Append(argum);
-
-            return sb.ToString();
+            return callingMethod;
         }
 
         /// <summary>
-        /// building arguments of the string
-        /// for other types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildArguments(object[] arguments)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            for (var i = 0; i < arguments.Length; i++)
-            {
-                sb.Append("(");
-                sb.Append(arguments[i].GetType().Name);
-                sb.Append(")");
-                sb.Append("=");
-                sb.Append(arguments[i].ToString());
-                if (i < arguments.Length - 1)
-                    sb.Append("; ");
-            }
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// building parameters of the string
-        /// for other types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildOther(object[] arguments, ParameterInfo[] parameters)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append("(");
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                sb.Append(parameters[i].ParameterType.Name);
-                sb.Append(" ");
-                sb.Append(parameters[i].Name);
-                if (i < parameters.Length - 1)
-                    sb.Append(", ");
-            }
-            sb.Append(")");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// building parameters of the string
-        /// for info types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildInfoError(object[] arguments)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("(");
-            sb.Append("(");
-            sb.Append(arguments[0]);
-            sb.Append(")");
-            sb.Append(")");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// building parameter of the string
-        /// for prop types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildProp(object[] arguments)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("(");
-            sb.Append(arguments[1]);
-            sb.Append(")");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// building parameters of the string
-        /// for call types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildCalled(ParameterInfo[] parameters, object[] arguments)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("(");
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                sb.Append("(");
-                sb.Append(parameters[i].ParameterType.Name);
-                sb.Append(")");
-                sb.Append(parameters[i].Name);
-                if (!string.IsNullOrEmpty(arguments[i].ToString()))
-                    sb.Append("=");
-                sb.Append(arguments[i].ToString());
-                if (i < parameters.Length - 1)
-                    sb.Append(", ");
-            }
-            sb.Append(")");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// building first part of the string containig time, class name, method name
-        /// for other types of event
-        /// </summary>
-        /// <returns>string data</returns>
-        private string BuildBegin(DateTime date, string type, string className, string methodName)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append(date.ToLongTimeString());
-            sb.Append(".");
-            sb.Append(date.Millisecond.ToString());
-            sb.Append("|");
-            sb.Append(type);
-            sb.Append("|");
-            sb.Append(className);
-            sb.Append("|");
-            sb.Append(methodName);
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// in case of async method retrieved from the stack, is searching for real name of the method
+        /// in case of async method retrieved from the stack, method is searching for real name of the method
         /// </summary>
         /// <returns>founded method, or null in case if not found</returns>
         private static MethodBase GetRealMethodFromAsyncMethod(MethodBase asyncMethod)
@@ -602,37 +276,6 @@ namespace Params_Logger
             catch
             {
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// saves async log event line
-        /// </summary>
-        private async Task SaveLogAsync(string line) //DO NOT LOG -> makes endless loop!
-        {
-            try
-            {
-                using (TextWriter LineBuilder = new StreamWriter(_logFile, true))
-                {
-                    await LineBuilder.WriteLineAsync(line);
-                }
-            }
-            catch
-            {
-                await Task.Delay(100);
-                await SaveLogAsync(line + " <--DELAYED");
-            }
-        }
-
-        /// <summary>
-        /// deletes file on aplication start, if deleteLogs = true in log.config
-        /// </summary>
-        /// <returns>string data</returns>
-        private void DeleteFile(string path)
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
             }
         }
     }

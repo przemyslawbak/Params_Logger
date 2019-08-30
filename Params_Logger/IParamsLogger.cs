@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Params_Logger
 {
@@ -9,5 +10,6 @@ namespace Params_Logger
         void Info(string value);
         void Error(string value);
         void Prop(object value, [CallerMemberName] string propertyName = null);
+        Task Initialization { get; set; }
     }
 }
