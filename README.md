@@ -27,15 +27,29 @@ Library was created for logging method calls, exceptions, property changes and a
 
 ## Setup
 
-To use the library you need to install it with **NuGet** and inject it into the class constructor:
+To use the library you need to install it with **NuGet** and inject it into the class constructor. Also run `await _log.Initialization;` at the beginning of your code to make sure that ParamsLogger will be loaded before rest of the code. To do it, you can use exposed `Initialization` property to use [Asynchronous Initialization Pattern](https://blog.stephencleary.com/2013/01/async-oop-2-constructors.html "Asynchronous Initialization Pattern"), as in the example:
 ```csharp
-        private readonly ILogService _log;
 
-        public YourViewModel(ILogService log)
+
+public class BrowserViewModel : IAsyncInitialization
+{
+        private readonly IParamsLogger _log;
+
+        public YourViewModel(IParamsLogger log)
         {
             _log = log;
-
+            Initialization = InitializeProgramAsync();
         }
+        
+        public Task Initialization { get; private set; } //for Asynchronous Initialization Pattern
+        
+        public async Task InitializeProgramAsync()
+        {
+            await _log.Initialization; //awaiting for init of logger before continue with your code
+
+            await Task.Delay(100000);
+        }
+}
 ```
 
 Somewhere inside of your project you need to create **log.config** file. Setup example:
