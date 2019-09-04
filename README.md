@@ -45,7 +45,7 @@ public class BrowserViewModel : IAsyncInitialization
         
         public async Task InitializeProgramAsync()
         {
-            await _log.Initialization; //awaiting for init of logger before continue with your code
+            await _log.GetLogger; //awaiting for init of logger before continue with your code
 
             await Task.Delay(100000);
         }
