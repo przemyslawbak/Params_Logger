@@ -24,12 +24,8 @@ namespace Params_Logger
         private bool _executeOnDebugSettings;
         private bool _deleteLogs;
 
-        public ParamsLogger(IFileService fileService, IStringService stringService, IConfigService configService)
+        public ParamsLogger()
         {
-            _fileService = fileService;
-            _stringService = stringService;
-            _configService = configService;
-
             LogList = new List<LogModel>();
 
             GetLogger = RunConfigAsync();
