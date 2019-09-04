@@ -2,8 +2,8 @@
 
 namespace Params_Logger
 {
-    public interface IAsyncInitialization
+    public interface IAsyncLoggerInit
     {
-        Task Initialization { get; }
+        Task GetLogger { get; }
     }
 }

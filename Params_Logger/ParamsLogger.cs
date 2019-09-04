@@ -1,7 +1,5 @@
-﻿using Autofac;
-using Params_Logger.Models;
+﻿using Params_Logger.Models;
 using Params_Logger.Services;
-using Params_Logger.Startup;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,13 +11,12 @@ using System.Timers;
 
 namespace Params_Logger
 {
-    public class ParamsLogger : IParamsLogger, IAsyncInitialization
+    public class ParamsLogger : IParamsLogger, IAsyncLoggerInit
     {
-        private readonly IFileService _fileService;
-        private readonly IStringService _stringService;
-        private readonly IConfigService _configService;
+        private IFileService _fileService;
+        private IStringService _stringService;
+        private IConfigService _configService;
         private Timer _savingTimer;
-        private AppDomain _currentDomain;
 
         //config fields
         private string _logFile;
@@ -31,14 +28,16 @@ namespace Params_Logger
         {
             _fileService = fileService;
             _stringService = stringService;
+            _configService = configService;
 
             LogList = new List<LogModel>();
 
-            Initialization = RunConfigAsync();
+            GetLogger = RunConfigAsync();
         }
 
         public List<LogModel> LogList { get; set; } //list of added logs
-        public Task Initialization { get; set; } //async init Task
+        public Task GetLogger { get; set; } //async init Task
+        public Facade Facade { get; set; }
 
         private ConfigModel _config;
         public ConfigModel Config
@@ -60,8 +59,11 @@ namespace Params_Logger
         /// </summary>
         private async Task RunConfigAsync()
         {
-            IContainer container = BootStrapper.BootStrap();
-            _currentDomain = AppDomain.CurrentDomain;
+            Facade = new Facade(new FileService(), new ConfigService(new FileService()), new StringService());
+
+            _fileService = Facade.FileService; ;
+            _stringService = Facade.StringService;
+            _configService = Facade.ConfigService;
 
             ConfigModel config = _configService.GetConfig();
 
@@ -138,7 +140,7 @@ namespace Params_Logger
 
             foreach (LogModel item in iterateMe)
             {
-                string line = _stringService.GetStringAttributes(item);
+                string line = await Task.Run(() => _stringService.GetStringAttributes(item));
 
                 await _fileService.SaveLogAsync(line, _logFile);
             }

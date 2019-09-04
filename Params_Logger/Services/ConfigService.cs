@@ -129,7 +129,7 @@ namespace Params_Logger.Services
             string value = config.AppSettings.Settings[propName].Value;
             bool isParsed = bool.TryParse(value, out bool result);
 
-            return isParsed ? Convert.ToBoolean(value) : _deleteLogsDefaults;
+            return isParsed ? result : _deleteLogsDefaults;
         }
 
         /// <summary>
