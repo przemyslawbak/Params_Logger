@@ -61,7 +61,7 @@ namespace Params_Logger
             _stringService = Facade.StringService;
             _configService = Facade.ConfigService;
 
-            ConfigModel config = _configService.GetConfig();
+            Config = _configService.GetConfig();
 
             if (_deleteLogs)
             {
@@ -128,7 +128,6 @@ namespace Params_Logger
         /// created new log list for iteration and clears previous collection
         /// iterates new collection to process items
         /// </summary>
-        /// <returns></returns>
         private async Task ProcessLogList()
         {
             List<LogModel> iterateMe = LogList.ToList();
