@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
@@ -10,7 +9,7 @@ namespace Params_Logger.Services
 {
     public class ConfigService : IConfigService
     {
-        private readonly IFileService _fileService;
+        private IFileService _fileService;
 
         //config defaults
         private readonly string _logFileDefaults = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "log.txt");
@@ -29,13 +28,10 @@ namespace Params_Logger.Services
         private bool _consoleLog;
         private bool _infoOnly;
 
-        public ConfigService(IFileService fileService)
+        public ConfigModel GetConfig(IStringService stringService, IFileService fileService, IProcessingPlant processingPlant)
         {
             _fileService = fileService;
-        }
 
-        public ConfigModel GetConfig()
-        {
             string path = GetLogConfigPath();
 
             if (string.IsNullOrEmpty(path))
@@ -71,7 +67,10 @@ namespace Params_Logger.Services
                 LogFile = _logFile,
                 ConsoleLog = _consoleLog,
                 FileLog = _fileLog,
-                InfoOnly = _infoOnly
+                InfoOnly = _infoOnly,
+                StringService = stringService,
+                FileService = fileService,
+                ProcessingPlant = processingPlant
             };
         }
 

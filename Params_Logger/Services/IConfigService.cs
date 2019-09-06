@@ -4,6 +4,6 @@ namespace Params_Logger.Services
 {
     public interface IConfigService
     {
-        ConfigModel GetConfig();
+        ConfigModel GetConfig(IStringService stringService, IFileService fileService, IProcessingPlant processingPlant);
     }
 }

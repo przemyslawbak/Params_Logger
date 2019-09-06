@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Params_Logger.Services;
 
 namespace Params_Logger.Models
 {
     public class ConfigModel
     {
+        public IStringService StringService { get; set; }
+        public IFileService FileService { get; set; }
+        public IProcessingPlant ProcessingPlant { get; set; }
         public string LogFile { get; set; }
         public bool DebugOnly { get; set; }
         public bool DeleteLogs { get; set; }
