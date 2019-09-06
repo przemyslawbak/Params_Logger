@@ -23,6 +23,9 @@ namespace Params_Logger
         private bool _debugOnly;
         private bool _executeOnDebugSettings;
         private bool _deleteLogs;
+        private bool _fileLog;
+        private bool _consoleLog;
+        private bool _infoOnly;
 
         public ParamsLogger()
         {
@@ -46,6 +49,9 @@ namespace Params_Logger
                 _debugOnly = _config.DebugOnly;
                 _executeOnDebugSettings = _config.ExecuteOnDebugSettings;
                 _deleteLogs = _config.DeleteLogs;
+                _fileLog = _config.FileLog;
+                _consoleLog = _config.ConsoleLog;
+                _infoOnly = _config.InfoOnly;
             }
         }
 
@@ -137,7 +143,12 @@ namespace Params_Logger
             {
                 string line = await Task.Run(() => _stringService.GetStringAttributes(item));
 
-                await _fileService.SaveLogAsync(line, _logFile);
+                if (_fileLog)
+                    await _fileService.SaveLogAsync(line, _logFile);
+                if (_consoleLog && !_infoOnly)
+                    Console.WriteLine(line);
+                else if (_consoleLog && _infoOnly && line.Contains("|INFO|"))
+                    Console.WriteLine(line);
             }
         }
 

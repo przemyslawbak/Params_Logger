@@ -16,12 +16,18 @@ namespace Params_Logger.Services
         private readonly string _logFileDefaults = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "log.txt");
         private readonly bool _debugOnlyDefaults = true;
         private readonly bool _deleteLogsDefaults = true;
+        private readonly bool _fileLogDefaults = true;
+        private readonly bool _consoleLogDefaults = true;
+        private readonly bool _infoOnlygDefaults = true;
 
         //config variables
         private string _logFile;
         private bool _debugOnly;
         private bool _executeOnDebugSettings;
         private bool _deleteLogs;
+        private bool _fileLog;
+        private bool _consoleLog;
+        private bool _infoOnly;
 
         public ConfigService(IFileService fileService)
         {
@@ -37,6 +43,9 @@ namespace Params_Logger.Services
                 _logFile = _logFileDefaults;
                 _debugOnly = _debugOnlyDefaults;
                 _deleteLogs = _deleteLogsDefaults;
+                _fileLog = _fileLogDefaults;
+                _consoleLog = _consoleLogDefaults;
+                _infoOnly = _infoOnlygDefaults;
             }
             else
             {
@@ -47,6 +56,9 @@ namespace Params_Logger.Services
                 _logFile = GetLogPath(config);
                 _debugOnly = GetDebugOnlyPath(config);
                 _deleteLogs = GetDeleteLogs(config);
+                _fileLog = GetFileLog(config);
+                _consoleLog = GetConsoleLog(config);
+                _infoOnly = GetInfoOnly(config);
             }
 
             _executeOnDebugSettings = GetOnDebugSettings();
@@ -56,8 +68,41 @@ namespace Params_Logger.Services
                 DebugOnly = _debugOnly,
                 DeleteLogs = _deleteLogs,
                 ExecuteOnDebugSettings = _executeOnDebugSettings,
-                LogFile = _logFile
+                LogFile = _logFile,
+                ConsoleLog = _consoleLog,
+                FileLog = _fileLog,
+                InfoOnly = _infoOnly
             };
+        }
+
+        /// <summary>
+        /// gets setting for infoOnly from log.config or returns default
+        /// </summary>
+        /// <param name="config">app config</param>
+        /// <returns>bool value</returns>
+        private bool GetInfoOnly(Configuration config)
+        {
+            return GetBoolConfig("infoOnlyConsole", config);
+        }
+
+        /// <summary>
+        /// gets setting for fileLog from log.config or returns default
+        /// </summary>
+        /// <param name="config">app config</param>
+        /// <returns>bool value</returns>
+        private bool GetConsoleLog(Configuration config)
+        {
+            return GetBoolConfig("consoleLog", config);
+        }
+
+        /// <summary>
+        /// gets setting for consoleLog from log.config or returns default
+        /// </summary>
+        /// <param name="config">app config</param>
+        /// <returns>bool value</returns>
+        private bool GetFileLog(Configuration config)
+        {
+            return GetBoolConfig("fileLog", config);
         }
 
         /// <summary>
@@ -107,8 +152,6 @@ namespace Params_Logger.Services
         /// <returns>file path</returns>
         private string GetLogConfigPath()
         {
-
-
             string newDirectory = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName;
             string[] files = Directory.GetFiles(newDirectory, "log.config", SearchOption.AllDirectories);
 
