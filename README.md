@@ -8,7 +8,7 @@ Library was created for logging method calls, exceptions, property changes and a
 ## Features
 
 1. Parsing method and properties parameter values with their names, with using the minimum amount of code.
-2. Saving the logs with easy to read format.
+2. Saving the parameters logs with easy to read format.
 3. Setup library configuration in separate log.config file.
 4. Synchronous calls of the library interface.
 5. Possibility to place log.config anywhere in the project.
@@ -21,7 +21,9 @@ Library was created for logging method calls, exceptions, property changes and a
 8. Configuration covers:
   - log file path and name,
   - use only in debug or not,
-  - deleting logs on application start.
+  - deleting logs on application start,
+  - log in console and/or file,
+  - console display only INFO logs
   
 # Usage
 
@@ -47,7 +49,7 @@ public class BrowserViewModel : IAsyncInitialization
         {
             await _log.GetLogger; //awaiting for init of logger before continue with your code
 
-            await Task.Delay(100000);
+            await Task.Delay(1000);
         }
 }
 ```
@@ -69,6 +71,18 @@ Somewhere inside of your project you need to create **log.config** file. Setup e
         key="deleteLogs"
         value="true"
         />
+    <add
+        key="fileLog"
+        value="true"
+        />
+    <add
+        key="consoleLog"
+        value="true"
+        />
+    <add
+        key="infoOnlyConsole"
+        value="true"
+        />
   </appSettings>
 </configuration>
 
@@ -76,7 +90,10 @@ Somewhere inside of your project you need to create **log.config** file. Setup e
 Where:
  - `debugOnly` means that will save logs with debugger attached only, default value: `true`,
  - `logFile` means where will save the logs, default value: is project main folder with file name `log.txt`,
- - `deleteLogs` is for deleting log file on application startup, default value: `true`.
+ - `deleteLogs` is for deleting log file on application startup, default value: `true`,
+ - `fileLog` is a statement, that you want to save logs into log file, default value: `true`,
+ - `consoleLog` is a statement, that you want to display logs in console, default value: `true`,
+ - `infoOnlyConsole` if `consoleLog` is `true`, you can decide to display only **INFO** logs, default value: `true`.
  
  ## Logging
 
