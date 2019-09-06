@@ -12,7 +12,7 @@ Library was created for logging method calls, exceptions, property changes and a
 3. Setup library configuration in separate log.config file.
 4. Synchronous calls of the library interface.
 5. Possibility to place log.config anywhere in the project.
-6. Saving unhandled exceptions.
+6. Creating singleton object of the logger.
 7. Logged data types:
   - property name with value,
   - called method name with property names and values,
@@ -29,27 +29,15 @@ Library was created for logging method calls, exceptions, property changes and a
 
 ## Setup
 
-To use the library you need to install it with **NuGet** and inject it into the class constructor. Also run `await _log.Initialization;` at the beginning of your code to make sure that ParamsLogger will be loaded before rest of the code. To do it, you can use exposed `Initialization` property to use [Asynchronous Initialization Pattern](https://blog.stephencleary.com/2013/01/async-oop-2-constructors.html "Asynchronous Initialization Pattern"), as in the example:
+To use the library you need to install it with [NuGet](https://www.nuget.org/packages/Params_Logger/ "NuGet"). After installation you can create singleton of `ParamsLogger` in your class and all other classes of your project:
 ```csharp
-
-
-public class BrowserViewModel : IAsyncInitialization
+public class YourViewModel : IAsyncInitialization
 {
-        private readonly IParamsLogger _log;
+        private static readonly ILogger _log = ParamsLogger.LogInstance.GetLogger(); //singleton
 
-        public YourViewModel(IParamsLogger log)
+        public YourViewModel()
         {
-            _log = log;
-            Initialization = InitializeProgramAsync();
-        }
-        
-        public Task Initialization { get; private set; } //for Asynchronous Initialization Pattern
-        
-        public async Task InitializeProgramAsync()
-        {
-            await _log.GetLogger; //awaiting for init of logger before continue with your code
-
-            await Task.Delay(1000);
+            //ctor
         }
 }
 ```
@@ -170,9 +158,12 @@ When method catches exception, it gives sample output:
 # Technology
 
 1. Approaches:
-  - is called synchronously and saving records into collection,
-  - library is processing data on Timer short intervals,
+  - is called synchronously,
   - logs are saved asynchronously,
+  - locking log object on creation,
+  - singleton pattern for logger class,
+  - facade used for hiding dependencies,
+  - factory pattern for creation of tyhe logger,
   - logging unhandled fatal exceptions.
   
 2. Library is using:
