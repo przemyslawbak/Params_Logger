@@ -3,14 +3,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Params_Logger</PackageId>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Description>Library was created for logging method calls, exceptions, property changes and additional data selected by the user from a solution, and saving the logs in a file with clear, transparent and readable format. Currently logger works only with .Net Framework.</Description>
     <Copyright>Przemyslaw Bak</Copyright>
     <PackageLicenseUrl>https://github.com/przemyslawbak/Params_Logger/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/przemyslawbak/Params_Logger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/przemyslawbak/Params_Logger</RepositoryUrl>
     <PackageTags>log, logging, logger, params, parameters, parameter, variable, argument, property, change</PackageTags>
-    <PackageReleaseNotes>Corrected config bug;</PackageReleaseNotes>
+    <PackageReleaseNotes>Added config properties: log in file, log in console, only INFO in console;</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
