@@ -31,7 +31,7 @@ Library was created for logging method calls, exceptions, property changes and a
 
 To use the library you need to install it with [NuGet](https://www.nuget.org/packages/Params_Logger/ "NuGet"). After installation you can create singleton of `ParamsLogger` in your class and all other classes of your project:
 ```csharp
-public class YourViewModel : IAsyncInitialization
+public class YourViewModel
 {
         private static readonly ILogger _log = ParamsLogger.LogInstance.GetLogger(); //singleton
 
