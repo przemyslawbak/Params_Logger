@@ -2,19 +2,33 @@
 
 namespace Params_Logger
 {
-    public sealed class ParamsLogger : IParamsLogger
+    public class ParamsLogger : IParamsLogger
     {
-        static readonly LogFactory factory = new LogFactory();
         public static ParamsLogger LogInstance
         {
             get { return _lazyInstance.Value; }
         }
 
+        private ILogFactory _factory;
+        public ILogFactory Factory
+        {
+            get
+            {
+                if (_factory == null)
+                {
+                    _factory = new LogFactory();
+                }
+
+                return _factory;
+            }
+            set { _factory = value; }
+        }
+
         private static readonly Lazy<ParamsLogger> _lazyInstance = new Lazy<ParamsLogger>(() => new ParamsLogger());
 
-        public Logger GetLogger()
+        public ILogger GetLogger()
         {
-            return factory.GetLogger();
+            return Factory.GetLogger();
         }
     }
 }

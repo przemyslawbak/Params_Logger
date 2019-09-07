@@ -1,6 +1,6 @@
 ﻿namespace Params_Logger
 {
-    public interface IParamsLogger
+    public interface ILogFactory
     {
         ILogger GetLogger();
     }

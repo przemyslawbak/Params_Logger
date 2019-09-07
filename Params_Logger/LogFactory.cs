@@ -3,28 +3,22 @@ using Params_Logger.Services;
 
 namespace Params_Logger
 {
-    public class LogFactory
+    public class LogFactory : ILogFactory
     {
-        private Facade _facade;
         private bool _created;
 
-        public LogFactory()
-        {
-            _facade = new Facade(new FileService(), new ConfigService(), new StringService(), new ProcessingPlant());
-        }
-
-        public Logger GetLogger()
+        public ILogger GetLogger()
         {
             ConfigModel config = GetLoggerConfig();
 
-            Logger newLogger = CreateNewLogger(config);
+            ILogger newLogger = CreateNewLogger(config);
 
             _created = true;
 
             return newLogger;
         }
 
-        private Logger CreateNewLogger(ConfigModel config)
+        private ILogger CreateNewLogger(ConfigModel config)
         {
             Logger newLogger = new Logger(config);
 
@@ -36,10 +30,10 @@ namespace Params_Logger
 
         private ConfigModel GetLoggerConfig()
         {
-            IConfigService configService = _facade.ConfigService;
-            IFileService fileService = _facade.FileService;
-            IStringService stringService = _facade.StringService;
-            IProcessingPlant processingPlant = _facade.ProcessingPlant;
+            IConfigService configService = new ConfigService();
+            IFileService fileService = new FileService();
+            IStringService stringService = new StringService();
+            IProcessingPlant processingPlant = new ProcessingPlant();
 
             return configService.GetConfig(stringService, fileService, processingPlant);
         }
