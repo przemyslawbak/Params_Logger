@@ -11,6 +11,8 @@
     <RepositoryUrl>https://github.com/przemyslawbak/Params_Logger</RepositoryUrl>
     <PackageTags>log, logging, logger, params, parameters, parameter, variable, argument, property, change</PackageTags>
     <PackageReleaseNotes>Removed facade; Added factory property DI for testability;</PackageReleaseNotes>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
