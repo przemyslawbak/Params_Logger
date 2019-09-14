@@ -22,7 +22,7 @@ namespace Params_Logger
         /// prvate property locking on set and calling ProcessNewLogAsync
         /// </summary>
         private LogModel _newLog;
-        private LogModel NewLog
+        public LogModel NewLog
         {
             get => _newLog;
             set
@@ -36,6 +36,28 @@ namespace Params_Logger
         }
 
         /// <summary>
+        /// if _clock not assigned in unit test, gets DateTime.Now and resets property
+        /// </summary>
+        private DateTime _clock;
+        public DateTime ClockNow
+        {
+            get
+            {
+                if (_clock == new DateTime())
+                {
+                    _clock = DateTime.Now;
+                }
+
+                DateTime toReturn = _clock;
+
+                ClockNow = new DateTime();
+
+                return toReturn;
+            }
+            set { _clock = value; }
+        }
+
+        /// <summary>
         /// interface implementation
         /// can be called from property setter
         /// </summary>
@@ -45,7 +67,7 @@ namespace Params_Logger
         {
             if (_config.ExecuteOnDebugSettings) // if on DEBUG
             {
-                DateTime date = DateTime.Now;
+                DateTime date = ClockNow;
 
                 object[] arguments = { propertyName, value };
 
@@ -64,28 +86,11 @@ namespace Params_Logger
         {
             if (_config.ExecuteOnDebugSettings) // if on DEBUG
             {
-                DateTime date = DateTime.Now;
+                DateTime date = ClockNow;
 
                 MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
                 NewLog = new LogModel { MethodName = nameof(Called), Arguments = arguments, Date = date, Method = callingMethod };
-            }
-        }
-
-        /// <summary>
-        /// interface implementation
-        /// can be called from methods
-        /// </summary>
-        /// <param name="arguments">array of passed arguments</param>
-        public void Ended(params object[] arguments)
-        {
-            if (_config.ExecuteOnDebugSettings) // if on DEBUG
-            {
-                DateTime date = DateTime.Now;
-
-                MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
-
-                NewLog = new LogModel { MethodName = nameof(Ended), Arguments = arguments, Date = date, Method = callingMethod };
             }
         }
 
@@ -98,7 +103,7 @@ namespace Params_Logger
         {
             if (_config.ExecuteOnDebugSettings) // if on DEBUG
             {
-                DateTime date = DateTime.Now;
+                DateTime date = ClockNow;
 
                 object[] arguments = { value };
 
@@ -117,7 +122,7 @@ namespace Params_Logger
         {
             if (_config.ExecuteOnDebugSettings) // if on DEBUG
             {
-                DateTime date = DateTime.Now;
+                DateTime date = ClockNow;
 
                 object[] arguments = { value };
 

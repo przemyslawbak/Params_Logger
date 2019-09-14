@@ -42,7 +42,7 @@ namespace Params_Logger.Services
         /// <param name="methodName">method</param>
         /// <param name="parameters">passed parameters</param>
         /// <param name="arguments">passed arguments</param>
-        /// <returns></returns>
+        /// <returns>string builder converted to string</returns>
         private string BuildLine(DateTime date, string type, string className, string methodName, ParameterInfo[] parameters, object[] arguments)
         {
             bool areParams = parameters.Length > 0;
