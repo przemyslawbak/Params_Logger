@@ -18,22 +18,7 @@ namespace Params_Logger
             _config = config;
         }
 
-        /// <summary>
-        /// prvate property locking on set and calling ProcessNewLogAsync
-        /// </summary>
-        private LogModel _newLog;
-        public LogModel NewLog
-        {
-            get => _newLog;
-            set
-            {
-                lock (lockObject)
-                {
-                    _newLog = value;
-                    ProcessNewLogAsync(_newLog).Wait();
-                }
-            }
-        }
+        public LogModel NewLog { get; set; }
 
         /// <summary>
         /// if _clock not assigned in unit test, gets DateTime.Now and resets property
@@ -73,7 +58,7 @@ namespace Params_Logger
 
                 MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
-                NewLog = new LogModel { MethodName = nameof(Prop), Arguments = arguments, Date = date, Method = callingMethod };
+                ProcessNewLogAsync(new LogModel { MethodName = nameof(Prop), Arguments = arguments, Date = date, Method = callingMethod }).Wait();
             }
         }
 
@@ -90,7 +75,7 @@ namespace Params_Logger
 
                 MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
-                NewLog = new LogModel { MethodName = nameof(Called), Arguments = arguments, Date = date, Method = callingMethod };
+                ProcessNewLogAsync(new LogModel { MethodName = nameof(Called), Arguments = arguments, Date = date, Method = callingMethod }).Wait();
             }
         }
 
@@ -109,7 +94,7 @@ namespace Params_Logger
 
                 MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
-                NewLog = new LogModel { MethodName = nameof(Info), Arguments = arguments, Date = date, Method = callingMethod };
+                ProcessNewLogAsync(new LogModel { MethodName = nameof(Info), Arguments = arguments, Date = date, Method = callingMethod }).Wait();
             }
         }
 
@@ -128,7 +113,7 @@ namespace Params_Logger
 
                 MethodBase callingMethod = GetMethod(new StackTrace().GetFrame(1));
 
-                NewLog = new LogModel { MethodName = nameof(Error), Arguments = arguments, Date = date, Method = callingMethod };
+                ProcessNewLogAsync(new LogModel { MethodName = nameof(Error), Arguments = arguments, Date = date, Method = callingMethod }).Wait();
             }
         }
 
@@ -181,7 +166,9 @@ namespace Params_Logger
         /// <param name="newLog">LogModel to be processed</param>
         private async Task ProcessNewLogAsync(LogModel newLog)
         {
-            string line = await Task.Run(() => _config.StringService.GetStringAttributes(newLog));
+            NewLog = newLog;
+
+            string line = _config.StringService.GetStringAttributes(newLog);
 
             await _config.ProcessingPlant.SaveAndDisplay(line, _config);
         }
