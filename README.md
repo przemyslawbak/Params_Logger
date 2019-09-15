@@ -42,7 +42,7 @@ public class YourViewModel
 }
 ```
 
-Somewhere inside of your project you need to create **log.config** file. Setup example:
+Somewhere inside of your project you need to create **log.config** file. Your log file path will be in relation to the assembly of the application. Setup example:
 ```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
