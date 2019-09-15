@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
@@ -29,11 +30,15 @@ namespace Params_Logger.Services
         private bool _consoleLog;
         private bool _infoOnly;
 
+        public ConfigService()
+        {
+        }
+
         public ConfigModel GetConfig(IStringService stringService, IFileService fileService, IProcessingPlant processingPlant)
         {
             _fileService = fileService;
 
-            string mainDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string mainDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
             string path = GetLogConfigPath();
 
