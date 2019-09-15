@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Params_Logger.Models;
 
 namespace Params_Logger.Services
@@ -32,6 +33,8 @@ namespace Params_Logger.Services
         {
             _fileService = fileService;
 
+            string mainDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             string path = GetLogConfigPath();
 
             if (string.IsNullOrEmpty(path))
@@ -49,7 +52,7 @@ namespace Params_Logger.Services
                 configMap.ExeConfigFilename = path;
                 Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
 
-                _logFile = GetLogPath(config);
+                _logFile = Path.Combine(mainDirectory, GetLogPath(config));
                 _debugOnly = GetDebugOnlyPath(config);
                 _deleteLogs = GetDeleteLogs(config);
                 _fileLog = GetFileLog(config);
